@@ -36,8 +36,23 @@
 	    <!-- 设置对数据库进行批量删除,批量更新和批量插入的时候的批次大小 -->
 	    <property name="jdbc.batch_size">30</property>
 	    
+	    <property name="cache.use_second_level_cache">true</property>
+	    
+	    <property name="hibernate.cache.region.factory_class">org.hibernate.cache.ehcache.EhCacheRegionFactory</property>
+	    
+	    <!-- 配置启用查询缓存 -->
+	    <property name="cache.use_query_cache">true</property>
+	    
+	    <!-- 配置管理 Session 的方式 -->
+	    <property name="current_session_context_class">thread</property>	    
+	    
 	    <!-- 配置实体和.hbm.xml的关系映射 -->
 	    <mapping resource="com/lmg/hibernate/entities/Department.hbm.xml"/>
 	    <mapping resource="com/lmg/hibernate/entities/Employee.hbm.xml"/>
+	    
+	    <class-cache usage="read-write" class="com.lmg.hibernate.entities.Employee"/>
+	    <class-cache usage="read-write" class="com.lmg.hibernate.entities.Department"/>
+	    <!-- 配置对集合使用二级缓存  -->
+	    <collection-cache usage="read-write" collection="com.lmg.hibernate.entities.Department.emps"/>
     </session-factory>
 </hibernate-configuration>

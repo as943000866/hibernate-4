@@ -1,6 +1,9 @@
 package com.lmg.hibernate.entities;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 import org.hibernate.Query;
@@ -8,11 +11,15 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
+import org.hibernate.jdbc.Work;
 import org.hibernate.service.ServiceRegistry;
 import org.hibernate.service.ServiceRegistryBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.lmg.hibernate.dao.DepartmentDao;
+import com.lmg.hibernate.hibernate.HibernateUtils;
 
 public class test {
 	private SessionFactory sessionFactory;
@@ -35,6 +42,100 @@ public class test {
 		transaction.commit();
 		session.close();
 		sessionFactory.close();
+	}
+	
+	@Test
+	public void testBatch(){
+		session.doWork(new Work() {
+			
+			@Override
+			public void execute(Connection arg0) throws SQLException {
+				// 通过 JDBC 原生的 API 进行操作, 效率最高, 速度最快!
+				
+			}
+		});
+	}
+	
+	@Test
+	public void testManageSession(){
+		//获取 Session
+		//开启事务
+		Session session = HibernateUtils.getInstance().getSession();
+		System.out.println("--->" + session.hashCode());
+		Transaction transaction = session.beginTransaction();
+		
+		DepartmentDao departmentDao = new DepartmentDao();
+		
+		Department dept = new Department();
+		dept.setName("ATGUIGU");
+		
+		departmentDao.save(dept);
+		departmentDao.save(dept);
+		departmentDao.save(dept);
+	
+		transaction.commit();
+		System.out.println(session.isOpen());
+			
+	}
+	
+	@Test
+	public void testQueryIterate(){
+		Department dept = (Department) session.get(Department.class, 2);
+		System.out.println(dept.getName());
+		System.out.println(dept.getEmps().size());
+		
+		Query query = session.createQuery("FROM Employee e WHERE e.dept.id = 2");
+//		List<Employee> emps = query.list();
+//		System.out.println(emps.size());
+		
+		Iterator<Employee> empIt = query.iterate();
+		while(empIt.hasNext()){
+			System.out.println(empIt.next().getName());
+		}
+	}
+	
+	@Test
+	public void testUpdateTimeStampCache(){
+		Query query = session.createQuery("FROM Employee");
+		query.setCacheable(true);
+		
+		List<Employee> emps = query.list();
+		System.out.println(emps.size());
+		
+		Employee employee = (Employee) session.get(Employee.class, 1);
+		employee.setSalary(30000);
+		
+		emps = query.list();
+		System.out.println(emps.size());
+	}
+	
+	@Test
+	public void testQueryCache(){
+		Query query = session.createQuery("FROM Employee");
+		query.setCacheable(true);
+		
+		List<Employee> emps = query.list();
+		System.out.println(emps.size());
+		
+		emps = query.list();
+		System.out.println(emps.size());
+	}
+	
+	@Test
+	public void testCollectionSeconfLevelCache(){
+		Department dept = (Department) session.get(Department.class, 1);
+		System.out.println(dept.getName());
+		System.out.println(dept.getEmps().size());
+		
+		transaction.commit();
+		session.close();
+		
+		session = sessionFactory.openSession();
+	 	transaction = session.beginTransaction();
+		
+		Department dept2 = (Department) session.get(Department.class, 1);
+		System.out.println(dept2.getName());
+		System.out.println(dept2.getEmps().size());
 	}
 	
 	@Test
